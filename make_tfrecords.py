@@ -2,13 +2,11 @@ from __future__ import print_function
 
 import argparse
 import os
-import sys
 import timeit
 
 import numpy as np
 import scipy.io.wavfile as wavfile
 import tensorflow as tf
-import toml
 
 
 def _int64_feature(value):
@@ -78,22 +76,16 @@ def main(opts):
     elif os.path.exists(out_filepath) and opts.force_gen:
         print('Will overwrite previously existing tfrecords')
         os.unlink(out_filepath)
-    with open(opts.cfg) as cfh:
-        cfg_desc = toml.loads(cfh.read())
-        beg_enc_t = timeit.default_timer()
-        out_file = tf.python_io.TFRecordWriter(out_filepath)
-        for dset_i, (dset, dset_desc) in enumerate(cfg_desc.items()):
-            print('-' * 50)
-            wav_dir = dset_desc['clean']
-            wav_files = [os.path.join(wav_dir, wav) for wav in
-                         os.listdir(wav_dir) if wav.endswith('.wav')]
-            for m, wav_file in enumerate(wav_files):
-                encoder_proc(wav_file, out_file, 2 ** 10)
-        out_file.close()
-        end_enc_t = timeit.default_timer() - beg_enc_t
-        print('')
-        print('*' * 50)
-        print('Total processing and writing time: {} s'.format(end_enc_t))
+    beg_enc_t = timeit.default_timer()
+    out_file = tf.python_io.TFRecordWriter(out_filepath)
+    wav_files = tf.gfile.Glob(os.path.join(opts.wav_datasets_path, '*.wav'))
+    for wav_file in wav_files:
+        encoder_proc(wav_file, out_file, opts.canvas_size)
+
+    out_file.close()
+    end_enc_t = timeit.default_timer() - beg_enc_t
+
+    print('Total processing and writing time: {} s'.format(end_enc_t))
 
 
 if __name__ == '__main__':
@@ -108,6 +100,10 @@ if __name__ == '__main__':
                         help='Output filename')
     parser.add_argument('--force-gen', dest='force_gen', action='store_true',
                         help='Flag to force overwriting existing dataset.')
-    parser.set_defaults(force_gen=True)  #
+    parser.add_argument('--wav_datasets_path', type=str, default='data/clean_trainset_wav_16k/',
+                        help='Output filename')
+    parser.add_argument('--canvas_size', type=int, default=2 ** 10,
+                        help='Output filename')
+    parser.set_defaults(force_gen=True)
     opts = parser.parse_args()
     main(opts)
