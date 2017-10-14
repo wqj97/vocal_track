@@ -3,7 +3,7 @@ import os
 
 
 class Reader(object):
-    def __init__(self, path, canvas_size, batch_size, window_size=64, threads=8, pattem='*.tfrecords', pre_emph=0.):
+    def __init__(self, path, canvas_size, batch_size, window_size=64, threads=8, pattem='*.tfrecords'):
         """
         This is Reader
         :param str path: datasets path
@@ -12,10 +12,8 @@ class Reader(object):
         :param int window_size: slice each canvas into parts
         :param int threads: number of read threads
         :param str pattem: file pattem (default: *.tfrecords)
-        :param pre_emph: Pre-emphasis weight (default: 0)
         """
         self.kwidth = window_size
-        self.pre_emph = pre_emph
         self.canvas_size = canvas_size
         self.batch_size = batch_size
         self.threads = threads

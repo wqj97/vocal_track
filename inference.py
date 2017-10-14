@@ -35,6 +35,7 @@ class Inference(object):
         """
 
         var = tf.get_variable(name, shape, initializer=tf.contrib.layers.xavier_initializer())
+        tf.summary.histogram(name, var)
         if wd:
             l2_loss = tf.multiply(tf.nn.l2_loss(var), wd, name='weight_loss')
             tf.add_to_collection('l2_losses', l2_loss)
@@ -59,7 +60,7 @@ class Inference(object):
             lpc = np.concatenate(([1.], phi))
             lpca = -lpc[1:][::-1].T
             output.append(lpca)
-        return output
+        return np.array(output).astype(np.float32).T
 
     def down_conv(self, input_tensor, kwidth, num_kernel, stride, wd=None, padding='SAME', name='down_conv'):
         """
@@ -140,5 +141,4 @@ if __name__ == '__main__':
     voice_value = inference.get_lpc_a(voice_value, 64)
     print np.shape(voice_value)
     print np.shape(data)
-    print tf.convert_to_tensor(voice_value)
-    # print tf.matmul(tf.constant(voice_value), data).eval()
+    print tf.matmul(voice_value, data).eval()
