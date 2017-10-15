@@ -2,7 +2,7 @@ import tensorflow as tf
 import train
 
 tf.flags.DEFINE_string('buckets', './data', 'Path where date set are')
-tf.flags.DEFINE_string('checkpointDir', './saves', 'Path where model and summary saved')
+tf.flags.DEFINE_string('checkpointDir', './saves/', 'Path where model and summary saved')
 tf.flags.DEFINE_string('optimizer', 'adam', 'use which optimizer, support adam, rmsprop')
 tf.flags.DEFINE_float('learning_rate', 1e-3, 'Learning rate')
 tf.flags.DEFINE_float('Adam_beta_1', 0.5, 'Learning rate')

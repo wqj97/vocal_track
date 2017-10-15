@@ -42,16 +42,16 @@ class Train(object):
         global_step = tf.get_variable(
             'global_step', [],
             initializer=tf.constant_initializer(0), trainable=False)
-
+        global_step_increase = global_step + 1
         wav_data = tf.placeholder(tf.float32,
                                   [self.bach_size, self.canvas_size - self.window_size - 1, self.window_size])
 
         generate = inference.Inference(wav_data, self.kwidth, self.stride, self.is_train)
         generator = generate.build_ae_model()
 
-        generated = tf.placeholder(tf.float32, [None, self.window_size])
-        lpca = tf.placeholder(tf.float32, [self.window_size, None])
-        label_data = tf.placeholder(tf.float32, [self.bach_size, self.canvas_size - self.window_size - 1, 1])
+        lpca = tf.placeholder(tf.float32, [self.window_size, None], name="lpca")
+        label_data = tf.placeholder(tf.float32, [self.bach_size, self.canvas_size - self.window_size - 1, 1],
+                                    name="label")
 
         loss = losses.Losses(generator, lpca, label_data).get_loss()
         tf.summary.scalar('losses', loss)
@@ -62,27 +62,30 @@ class Train(object):
         tf.train.start_queue_runners()
 
         saver = tf.train.Saver()
-        summary_writer = tf.summary.FileWriter(self.save_path)
+        summary_writer = tf.summary.FileWriter(self.save_path, graph=self.sess.graph)
         summary_op = tf.summary.merge_all()
 
         for i in xrange(self.max_step):
 
-            train_collect, label_collect = self.sess.run([self.wav_data, self.label_data])
-
+            train_collect, label_collect, step = self.sess.run([self.wav_data, self.label_data, global_step_increase])
+            print step
             generate_data = generator.eval(feed_dict={
                 wav_data: train_collect
             })
             lpca_data = generate.get_lpc_a(generate_data)
+
             train_op.run(feed_dict={
-                generated: generate_data,
+                wav_data: train_collect,
                 lpca: lpca_data,
                 label_data: label_collect
             })
-            global_step += 1
+
             if i % self.summary_step or i + 1 == self.max_step:
                 summary_data = summary_op.eval(feed_dict={
-
+                    wav_data: train_collect,
+                    lpca: lpca_data,
+                    label_data: label_collect
                 })
-                summary_writer.add_summary(summary_data, global_step)
+                summary_writer.add_summary(summary_data, step)
             if i % self.saver_step or i + 1 == self.max_step:
                 saver.save(self.sess, self.save_path + 'model.ckpt', global_step)
