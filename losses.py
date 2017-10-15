@@ -11,9 +11,9 @@ class Losses(object):
 
     def __init__(self, generated_voice, lpca, labels):
         predict_data = tf.matmul(generated_voice, lpca)
+        labels = tf.reshape(labels, [-1, 1])
         self.loss = tf.reduce_mean(tf.pow(predict_data - labels, 2))
         # self.loss += tf.add_n(tf.get_collection('l2_losses'))
-
 
     def get_loss(self):
         return self.loss

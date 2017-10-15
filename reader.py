@@ -57,8 +57,8 @@ class Reader(object):
 if __name__ == '__main__':
     """
     test the batch output
-    train_collect: [batch_size, 2 ** 10 - kwidth, kwidth] -> [1, 959, 64]
-    label_collect: [batch_size, 2 ** 10 - kwidth, 1] -> [1, 959, 1]
+    train_collect: [batch_size, 2 ** 10 - kwidth - 1, kwidth] -> [1, 959, 64]
+    label_collect: [batch_size, 2 ** 10 - kwidth - 1, 1] -> [1, 959, 1]
     """
     import numpy as np
 

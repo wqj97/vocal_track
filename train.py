@@ -12,8 +12,10 @@ class Train(object):
 
     def __init__(self, sess, learning_rate, data_sets_path, batch_size, canvas_size, window_size, threads, max_steps,
                  save_path, optimizer, kwidth, stride, is_train, beta1, summary_step, saver_step):
+        self.bach_size = batch_size
         self.saver_step = saver_step
         self.summary_step = summary_step
+        self.canvas_size = canvas_size
         self.beta1 = beta1
         self.is_train = is_train
         self.stride = stride
@@ -41,36 +43,45 @@ class Train(object):
             'global_step', [],
             initializer=tf.constant_initializer(0), trainable=False)
 
-        generate = inference.Inference(self.wav_data, self.kwidth, self.stride, self.is_train)
+        wav_data = tf.placeholder(tf.float32,
+                                  [self.bach_size, self.canvas_size - self.window_size - 1, self.window_size])
 
-        lpca = tf.placeholder(tf.float32, [None, self.window_size])
-        input_data = tf.placeholder(tf.float32, [None, self.window_size])
-        label_data = tf.placeholder(tf.float32, [None, self.window_size])
+        generate = inference.Inference(wav_data, self.kwidth, self.stride, self.is_train)
+        generator = generate.build_ae_model()
 
-        loss = losses.Losses(input_data, lpca, label_data).get_loss()
+        generated = tf.placeholder(tf.float32, [None, self.window_size])
+        lpca = tf.placeholder(tf.float32, [self.window_size, None])
+        label_data = tf.placeholder(tf.float32, [self.bach_size, self.canvas_size - self.window_size - 1, 1])
+
+        loss = losses.Losses(generator, lpca, label_data).get_loss()
         tf.summary.scalar('losses', loss)
 
-        train_op = self.get_optimizer(self.optimizer).minimize(loss)
+        train_op = self.get_optimizer(self.optimizer).minimize(loss, var_list=tf.trainable_variables())
+
+        tf.global_variables_initializer().run()
+        tf.train.start_queue_runners()
 
         saver = tf.train.Saver()
         summary_writer = tf.summary.FileWriter(self.save_path)
         summary_op = tf.summary.merge_all()
+
         for i in xrange(self.max_step):
 
-            generate_data, label = self.sess.run([generate, self.label_data])
-            lpca_data = generate.get_lpc_a(generate_data, self.window_size)
-            train_op.eval(feed_dict={
-                lpca: lpca_data,
-                input_data: generate_data,
-                label_data: label
-            })
+            train_collect, label_collect = self.sess.run([self.wav_data, self.label_data])
 
+            generate_data = generator.eval(feed_dict={
+                wav_data: train_collect
+            })
+            lpca_data = generate.get_lpc_a(generate_data)
+            train_op.run(feed_dict={
+                generated: generate_data,
+                lpca: lpca_data,
+                label_data: label_collect
+            })
             global_step += 1
             if i % self.summary_step or i + 1 == self.max_step:
                 summary_data = summary_op.eval(feed_dict={
-                    lpca: lpca_data,
-                    input_data: generate_data,
-                    label_data: label
+
                 })
                 summary_writer.add_summary(summary_data, global_step)
             if i % self.saver_step or i + 1 == self.max_step:

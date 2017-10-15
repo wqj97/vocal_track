@@ -42,14 +42,14 @@ class Inference(object):
         return var
 
     @staticmethod
-    def get_lpc_a(signals, order):
+    def get_lpc_a(signals):
         """
         get lpc a
-        :param list signals: contains signals which need to be calculate
-        :param int order: number of signals need to be calculate
-        :return: list
+        :param ndarray signals: contains signals which need to be calculate
+        :return: ndarray
         """
         output = []
+        order = signals.shape[-1]
         for signal in signals:
             p = order + 1
             r = np.zeros(p, signal.dtype)

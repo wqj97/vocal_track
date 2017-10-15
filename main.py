@@ -7,7 +7,7 @@ tf.flags.DEFINE_string('optimizer', 'adam', 'use which optimizer, support adam, 
 tf.flags.DEFINE_float('learning_rate', 1e-3, 'Learning rate')
 tf.flags.DEFINE_float('Adam_beta_1', 0.5, 'Learning rate')
 tf.flags.DEFINE_integer('max_steps', 10000, "How many steps we need to execute")
-tf.flags.DEFINE_integer('batch_size', 32, "batch size")
+tf.flags.DEFINE_integer('batch_size', 2, "batch size")
 tf.flags.DEFINE_integer('threads', 8, "execute threads")
 tf.flags.DEFINE_integer('canvas_size', 2 ** 10, "Voice fragment length")
 tf.flags.DEFINE_integer('window_size', 64, "datasets window size")
