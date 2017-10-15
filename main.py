@@ -9,8 +9,8 @@ tf.flags.DEFINE_float('Adam_beta_1', 0.5, 'Learning rate')
 tf.flags.DEFINE_integer('max_steps', 10000, "How many steps we need to execute")
 tf.flags.DEFINE_integer('batch_size', 32, "batch size")
 tf.flags.DEFINE_integer('threads', 8, "execute threads")
-tf.flags.DEFINE_integer('canvas_size', 64, "Voice fragment length")
-tf.flags.DEFINE_integer('window_size', 2 ** 10, "datasets window size")
+tf.flags.DEFINE_integer('canvas_size', 2 ** 10, "Voice fragment length")
+tf.flags.DEFINE_integer('window_size', 64, "datasets window size")
 tf.flags.DEFINE_integer('summary_frequency', 20, "After how many steps to summary data")
 tf.flags.DEFINE_integer('save_frequency', 1000, "After how many steps to save model")
 tf.flags.DEFINE_integer('kwidth', 5, "width of convolution")
@@ -35,7 +35,7 @@ train_script = train.Train(sess=sess,
                            kwidth=FLAGS.kwidth,
                            stride=FLAGS.stride,
                            is_train=FLAGS.is_train,
-                           beta1=FLAGS.beta1,
+                           beta1=FLAGS.Adam_beta_1,
                            summary_step=FLAGS.summary_frequency,
                            saver_step=FLAGS.save_frequency
                            )

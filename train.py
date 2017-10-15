@@ -26,9 +26,6 @@ class Train(object):
         self.window_size = window_size
         self.wav_data, self.label_data = reader.Reader(data_sets_path, canvas_size, batch_size, window_size,
                                                        threads).get_batch()
-        self.saver = tf.train.Saver()
-        self.summary_writer = tf.summary.FileWriter(save_path)
-        self.summary_op = tf.summary.merge_all()
 
     def get_optimizer(self, optimizer_name):
         if optimizer_name == 'adam':
@@ -50,23 +47,31 @@ class Train(object):
         input_data = tf.placeholder(tf.float32, [None, self.window_size])
         label_data = tf.placeholder(tf.float32, [None, self.window_size])
 
-        loss = losses.Losses(input_data, lpca, label_data)
+        loss = losses.Losses(input_data, lpca, label_data).get_loss()
         tf.summary.scalar('losses', loss)
 
         train_op = self.get_optimizer(self.optimizer).minimize(loss)
+
+        saver = tf.train.Saver()
+        summary_writer = tf.summary.FileWriter(self.save_path)
+        summary_op = tf.summary.merge_all()
         for i in xrange(self.max_step):
 
             generate_data, label = self.sess.run([generate, self.label_data])
-
+            lpca_data = generate.get_lpc_a(generate_data, self.window_size)
             train_op.eval(feed_dict={
-                lpca: generate.get_lpc_a(generate_data, self.window_size),
+                lpca: lpca_data,
                 input_data: generate_data,
                 label_data: label
             })
 
             global_step += 1
             if i % self.summary_step or i + 1 == self.max_step:
-                summary_data = self.summary_op.eval()
-                self.summary_writer.add_summary(summary_data)
+                summary_data = summary_op.eval(feed_dict={
+                    lpca: lpca_data,
+                    input_data: generate_data,
+                    label_data: label
+                })
+                summary_writer.add_summary(summary_data, global_step)
             if i % self.saver_step or i + 1 == self.max_step:
-                self.saver.save(self.sess, self.save_path + 'model.ckpt', global_step)
+                saver.save(self.sess, self.save_path + 'model.ckpt', global_step)
