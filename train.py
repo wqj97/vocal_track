@@ -42,7 +42,6 @@ class Train(object):
         global_step = tf.get_variable(
             'global_step', [],
             initializer=tf.constant_initializer(0), trainable=False)
-        global_step_increase = global_step + 1
         wav_data = tf.placeholder(tf.float32,
                                   [self.bach_size, self.canvas_size - self.window_size - 1, self.window_size])
 
@@ -56,7 +55,8 @@ class Train(object):
         loss = losses.Losses(generator, lpca, label_data).get_loss()
         tf.summary.scalar('losses', loss)
 
-        train_op = self.get_optimizer(self.optimizer).minimize(loss, var_list=tf.trainable_variables())
+        train_op = self.get_optimizer(self.optimizer).minimize(loss, var_list=tf.trainable_variables(),
+                                                               global_step=global_step)
 
         tf.global_variables_initializer().run()
         tf.train.start_queue_runners()
@@ -67,13 +67,11 @@ class Train(object):
 
         for i in xrange(self.max_step):
 
-            train_collect, label_collect, step = self.sess.run([self.wav_data, self.label_data, global_step_increase])
-            print step
+            train_collect, label_collect = self.sess.run([self.wav_data, self.label_data])
             generate_data = generator.eval(feed_dict={
                 wav_data: train_collect
             })
             lpca_data = generate.get_lpc_a(generate_data)
-
             train_op.run(feed_dict={
                 wav_data: train_collect,
                 lpca: lpca_data,
@@ -86,6 +84,6 @@ class Train(object):
                     lpca: lpca_data,
                     label_data: label_collect
                 })
-                summary_writer.add_summary(summary_data, step)
+                summary_writer.add_summary(summary_data, global_step.eval())
             if i % self.saver_step or i + 1 == self.max_step:
                 saver.save(self.sess, self.save_path + 'model.ckpt', global_step)
