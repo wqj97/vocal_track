@@ -63,7 +63,6 @@ class Train(object):
         saver = tf.train.Saver(var_list=tf.trainable_variables())
         summary_writer = tf.summary.FileWriter(self.save_path, graph=self.sess.graph)
         summary_op = tf.summary.merge_all()
-
         for i in xrange(self.max_step):
 
             train_collect, label_collect = self.sess.run([self.wav_data, self.label_data])
@@ -85,4 +84,4 @@ class Train(object):
                 })
                 summary_writer.add_summary(summary_data, global_step.eval())
             if i % self.saver_step == 0 or i + 1 == self.max_step:
-                saver.save(self.sess, self.save_path + 'model.ckpt', global_step)
+                saver.save(self.sess, self.save_path + 'model', global_step)
