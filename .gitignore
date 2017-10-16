@@ -79,3 +79,5 @@ fabric.properties
 
 /data/data.tfrecords
 *.pyc
+/train.zip
+/saves/*

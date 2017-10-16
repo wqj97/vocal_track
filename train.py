@@ -2,7 +2,6 @@ import tensorflow as tf
 import inference
 import losses
 import reader
-import datetime
 
 
 class Train(object):
@@ -61,7 +60,7 @@ class Train(object):
         tf.global_variables_initializer().run()
         tf.train.start_queue_runners()
 
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(var_list=tf.trainable_variables())
         summary_writer = tf.summary.FileWriter(self.save_path, graph=self.sess.graph)
         summary_op = tf.summary.merge_all()
 
@@ -78,12 +77,12 @@ class Train(object):
                 label_data: label_collect
             })
 
-            if i % self.summary_step or i + 1 == self.max_step:
+            if i % self.summary_step == 0 or i + 1 == self.max_step:
                 summary_data = summary_op.eval(feed_dict={
                     wav_data: train_collect,
                     lpca: lpca_data,
                     label_data: label_collect
                 })
                 summary_writer.add_summary(summary_data, global_step.eval())
-            if i % self.saver_step or i + 1 == self.max_step:
+            if i % self.saver_step == 0 or i + 1 == self.max_step:
                 saver.save(self.sess, self.save_path + 'model.ckpt', global_step)
