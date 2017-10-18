@@ -118,27 +118,58 @@ class Inference(object):
             for index, num_kernel in enumerate(self.num_kernel):
                 with tf.variable_scope("down_conv_{}".format(index)) as scope:
                     preview_shape = layer.shape
-                    layer = self.down_conv(layer, self.kwidth, num_kernel, self.stride, name=scope.name)
+                    layer = self.down_conv(input_tensor=layer,
+                                           kwidth=self.kwidth,
+                                           num_kernel=num_kernel,
+                                           stride=self.stride,
+                                           name=scope.name)
                     print "{} -> {}".format(preview_shape, layer.shape)
         with tf.variable_scope('decoder'):
             print "up convolution"
             for index, layer_shape in enumerate(self.layer_shape[::-1][1:]):
                 with tf.variable_scope("up_conv_{}".format(index)) as scope:
                     preview_shape = layer.shape
-                    layer = self.up_conv(layer, self.kwidth, layer_shape[-1], self.stride,
-                                         output_shape=layer_shape, name=scope.name)
+                    layer = self.up_conv(input_tensor=layer,
+                                         kwidth=self.kwidth,
+                                         num_kernel=layer_shape[-1],
+                                         stride=self.stride,
+                                         output_shape=layer_shape,
+                                         name=scope.name)
                     print "{} -> {}".format(preview_shape, layer.shape)
         return tf.squeeze(layer)
 
+    def build_seae_model(self):
+        """
+        use SEGAN's AE model
+        :return: Tensor
+        """
+        import generator
+
+        class AEGenerator_option(object):
+            def __init__(self, num_kernel):
+                self.g_enc_depths = num_kernel
+                self.d_num_fmaps = ''
+                self.bias_downconv = False
+                self.deconv_type = 'deconv'
+                self.bias_deconv = False
+
+        generator = generator.AEGenerator(AEGenerator_option(self.num_kernel))
+        G = generator(self.input_tensor, is_ref=False, z_on=False)
+        return
+
 
 if __name__ == '__main__':
+    import reader
+
+    reader = reader.Reader('data', 2 ** 10, 2)
     sess = tf.InteractiveSession()
-    inference = Inference(tf.constant(0.1, dtype=tf.float32, shape=[2, 10, 64]))
-    data = inference.build_ae_model()
+    train_collect = reader.get_batch()[0]
+    tf.train.start_queue_runners()
+    inference = Inference(train_collect)
+    data = inference.build_seae_model()
     tf.global_variables_initializer().run()
-    data = data.eval()
-    voice_value = tf.constant(0.1, dtype=tf.float32, shape=[20, 64]).eval()
-    voice_value = inference.get_lpc_a(voice_value, 64)
-    print np.shape(voice_value)
-    print np.shape(data)
-    print tf.matmul(voice_value, data).eval()
+
+    print data
+    # print np.shape(voice_value)
+    # print np.shape(data)
+    # print tf.matmul(voice_value, data).eval()

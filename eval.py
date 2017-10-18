@@ -22,26 +22,26 @@ class Eval(object):
         saver.restore(sess, tf.train.latest_checkpoint(save_path))
 
     def eval(self):
-        import pylab as plt
+        import matplotlib.pyplot as plt
         train_collect, label_collect = self.sess.run([self.wav_data, self.label_data])
         generate_data = self.generator.eval(feed_dict={
             self.wav_data: train_collect
         })
         lpca_data = self.generate.get_lpc_a(generate_data)
         predict_data = np.matmul(generate_data, lpca_data)
-        print "generate data:"
-        print generate_data
-        print "predict data:"
-        print predict_data
+
         plt.subplot(311)
         plt.title('data figure')
-        plt.plot(generate_data[0], 'r', label='generate data')
-        plt.plot(label_collect[0], 'b', label='label')
+        plt.plot(generate_data[:, 0], 'r', label='generate data')
+        plt.plot(train_collect[0][:, 0], 'b', label='raw data')
+        plt.legend()
         plt.subplot(312)
         plt.title('predict figure')
-        plt.plot(label_collect[0], 'b', label='label')
         plt.plot(predict_data[0], 'r', label='predict')
+        plt.plot(np.reshape(label_collect, [-1]), 'b', label='label')
+        plt.legend()
         plt.subplot(313)
         plt.title('loss')
-        plt.plot(pow(predict_data[0] - label_collect[0], 2), label='(predic - data)^2')
+        plt.plot(pow(predict_data[0] - np.reshape(label_collect, [-1]), 2), label='(predic - data)^2')
+        plt.legend()
         plt.show()

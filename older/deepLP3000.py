@@ -11,10 +11,10 @@ from generator import *
 
 flags = tf.app.flags
 
-flags.DEFINE_string("e2e_dataset", "data/data.tfrecords", "TFRecords (Def: data/segan.tfrecords.")
+flags.DEFINE_string("e2e_dataset", "../data/data.tfrecords", "TFRecords (Def: data/segan.tfrecords.")
 flags.DEFINE_integer("canvas_size", 2 ** 10, "Canvas size (Def: 2^14).")
 
-flags.DEFINE_integer("batch_size", 10, "Batch size (Def: 150).")
+flags.DEFINE_integer("batch_size", 1, "Batch size (Def: 150).")
 flags.DEFINE_float("d_learning_rate", 0.01, "D learning_rate (Def: 0.0002)")
 
 FLAGS = flags.FLAGS
@@ -88,7 +88,7 @@ def main(_):
     learning_rate = 0.00001  # 0.0001
 
     deltamaxstep = 50
-    maxstep = 5000  # 10000
+    maxstep = 2000  # 10000
     test_epochs = 100
 
     training_epochs = 10  # 5000
