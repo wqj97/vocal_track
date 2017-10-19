@@ -138,44 +138,24 @@ class AEGenerator(object):
     def __init__(self, segan):
         self.segan = segan
 
-    def __call__(self, noisy_w, is_ref, spk=None, z_on=True, do_prelu=False):
+    def __call__(self, input_tensor, is_ref, spk=None, z_on=True, do_prelu=False):
         # TODO: remove c_vec
         """ Build the graph propagating (noisy_w) --> x
         On first pass will make variables.
         """
         segan = self.segan
 
-        def make_z(shape, mean=0., std=1., name='z'):
-            if is_ref:
-                with tf.variable_scope(name) as scope:
-                    z_init = tf.random_normal_initializer(mean=mean, stddev=std)
-                    z = tf.get_variable("z", shape,
-                                        initializer=z_init,
-                                        trainable=False)
-                    if z.device != "/device:GPU:0":
-                        # this has to be created into gpu0
-                        print('z.device is {}'.format(z.device))
-                        assert False
-            else:
-                z = tf.random_normal(shape, mean=mean, stddev=std,
-                                     name=name, dtype=tf.float32)
-            return z
-
         if hasattr(segan, 'generator_built'):
             tf.get_variable_scope().reuse_variables()
-            make_vars = False
-        else:
-            make_vars = True
         if is_ref:
             print('*** Building Generator ***')
-        in_dims = noisy_w.get_shape().as_list()
-        h_i = noisy_w
+        in_dims = input_tensor.get_shape().as_list()
+        h_i = input_tensor
         if len(in_dims) == 2:
-            h_i = tf.expand_dims(noisy_w, -1)
+            h_i = tf.expand_dims(input_tensor, -1)
         elif len(in_dims) < 2 or len(in_dims) > 3:
             raise ValueError('Generator input must be 2-D or 3-D')
         kwidth = 31
-        enc_layers = 7
         skips = []
         if is_ref and do_prelu:
             # keep track of prelu activations
@@ -219,12 +199,6 @@ class AEGenerator(object):
                     if is_ref:
                         print('-- Enc: leakyrelu activation --')
                     h_i = leakyrelu(h_i)
-
-            if z_on:
-                # random code is fused with intermediate representation
-                z = make_z([segan.batch_size, h_i.get_shape().as_list()[1],
-                            segan.g_enc_depths[-1]])
-                h_i = tf.concat([z, h_i], 2)
 
             # SECOND DECODER (reverse order)
             g_dec_depths = segan.g_enc_depths[:-1][::-1] + [1]
@@ -301,8 +275,6 @@ class AEGenerator(object):
             segan.generator_built = True
             # ret feats contains the features refs to be returned
             ret_feats = [wave]
-            if z_on:
-                ret_feats.append(z)
             if is_ref and do_prelu:
                 ret_feats += alphas
             return ret_feats

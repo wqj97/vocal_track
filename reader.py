@@ -42,16 +42,14 @@ class Reader(object):
         wave = (2. / 65535.) * tf.cast((wave - 32767), tf.float32) + 1.  # normalization
 
         train_collect = []
-        label_colloect = []
         for i in xrange(wave.shape[0] - self.kwidth - 1):
             train_collect.append(wave[i:i + self.kwidth])
-            label_colloect.append([wave[i + self.kwidth]])
 
-        train_collect, label_colloect = tf.train.shuffle_batch([train_collect, label_colloect],
-                                                               batch_size=self.batch_size, num_threads=self.threads,
-                                                               capacity=1000 + 10 * self.batch_size,
-                                                               min_after_dequeue=1000)
-        return train_collect, label_colloect
+        train_collect = tf.train.shuffle_batch([train_collect],
+                                               batch_size=self.batch_size, num_threads=self.threads,
+                                               capacity=1000 + 10 * self.batch_size,
+                                               min_after_dequeue=1000)
+        return train_collect
 
 
 if __name__ == '__main__':

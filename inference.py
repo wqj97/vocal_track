@@ -42,14 +42,14 @@ class Inference(object):
         return var
 
     @staticmethod
-    def get_lpc_a(signals):
+    def get_lpc_a(signals, order):
         """
         get lpc a
         :param ndarray signals: contains signals which need to be calculate
+        :param int order: the order of lpca
         :return: ndarray
         """
         output = []
-        order = signals.shape[-1]
         for signal in signals:
             p = order + 1
             r = np.zeros(p, signal.dtype)
@@ -60,7 +60,7 @@ class Inference(object):
             lpc = np.concatenate(([1.], phi))
             lpca = -lpc[1:][::-1].T
             output.append(lpca)
-        return np.array(output).astype(np.float32).T
+        return np.array(output)
 
     def down_conv(self, input_tensor, kwidth, num_kernel, stride, wd=None, padding='SAME', name='down_conv'):
         """
@@ -155,21 +155,22 @@ class Inference(object):
 
         generator = generator.AEGenerator(AEGenerator_option(self.num_kernel))
         G = generator(self.input_tensor, is_ref=False, z_on=False)
-        return
+        return tf.squeeze(G)
 
 
 if __name__ == '__main__':
     import reader
 
-    reader = reader.Reader('data', 2 ** 10, 2)
+    reader = reader.Reader('data', 2 ** 10, 1)
     sess = tf.InteractiveSession()
     train_collect = reader.get_batch()[0]
     tf.train.start_queue_runners()
     inference = Inference(train_collect)
     data = inference.build_seae_model()
     tf.global_variables_initializer().run()
-
-    print data
+    data = data.eval()
+    print data.shape
+    print inference.get_lpc_a([data], 16)
     # print np.shape(voice_value)
     # print np.shape(data)
     # print tf.matmul(voice_value, data).eval()

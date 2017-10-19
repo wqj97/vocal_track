@@ -16,6 +16,7 @@ tf.flags.DEFINE_integer('summary_frequency', 20, 'After how many steps to summar
 tf.flags.DEFINE_integer('save_frequency', 100, 'After how many steps to save model')
 tf.flags.DEFINE_integer('kwidth', 5, 'width of convolution')
 tf.flags.DEFINE_integer('stride', 2, 'stride of convolution')
+tf.flags.DEFINE_integer('order', 16, 'stride of convolution')
 tf.flags.DEFINE_boolean('log_device_placement', False, 'Log option used device')
 tf.flags.DEFINE_boolean('is_train', True, 'Log option used device')
 FLAGS = tf.flags.FLAGS
@@ -39,9 +40,10 @@ if FLAGS.is_train:
                                is_train=FLAGS.is_train,
                                beta1=FLAGS.Adam_beta_1,
                                summary_step=FLAGS.summary_frequency,
-                               saver_step=FLAGS.save_frequency)
+                               saver_step=FLAGS.save_frequency,
+                               order=FLAGS.order)
 
-    train_script.train_on_single_gpu()
+    train_script.train_on_gpu()
 else:
     eval_script = eval.Eval(sess=sess,
                             data_sets_path=FLAGS.buckets,
